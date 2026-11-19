@@ -3,21 +3,96 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cover Snap</title>
+<title>Palmshade Cover Studio</title>
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<main class="app">
-  <section class="controls">
-    <h1>Cover Snap</h1>
-    <p>A photo and a caption, made into a square cover.</p>
-    <label>Photo <input id="photo" type="file" accept="image/*"></label>
-    <label>Caption <input id="caption" type="text" maxlength="40" value="Sunset Heist"></label>
-    <button id="export" type="button">Export PNG 1080 x 1080</button>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">PS</span>
+    <div>
+      <h1>Palmshade Cover Studio</h1>
+      <p>Your photo + a caption → a multi-panel poster cover. Drag photos in, click a panel, export the PNG.</p>
+    </div>
+  </div>
+  <div class="export-box">
+    <label>Size
+      <select id="size">
+        <option value="1080x1080">Square · 1080 × 1080</option>
+        <option value="1080x1350" selected>Portrait · 1080 × 1350</option>
+        <option value="1920x1080">Wide · 1920 × 1080</option>
+      </select>
+    </label>
+    <button id="export" type="button" class="primary">Export PNG</button>
     <p id="status" role="status"></p>
+  </div>
+</header>
+
+<main class="app">
+  <aside class="panel left">
+    <section>
+      <h2>1 · Photos</h2>
+      <label class="file-label">Add your photo
+        <input id="file" type="file" accept="image/*" multiple>
+      </label>
+      <div class="row">
+        <button id="sample-boulevard" type="button">+ Sample: Boulevard</button>
+        <button id="sample-pier" type="button">+ Sample: Pier</button>
+      </div>
+      <div id="thumbs" class="thumbs"></div>
+      <p class="hint">…or drag &amp; drop image files anywhere on this page.</p>
+    </section>
+
+    <section>
+      <h2>2 · Layout</h2>
+      <div id="layouts" class="chips"></div>
+    </section>
+
+    <section>
+      <h2>3 · Colour grade</h2>
+      <div id="grades" class="chips"></div>
+    </section>
+
+    <section>
+      <h2>Presets</h2>
+      <div class="row">
+        <button id="preset-sunset" type="button">Sunset Boulevard</button>
+        <button id="preset-neon" type="button">Neon Pier</button>
+      </div>
+    </section>
+  </aside>
+
+  <section class="stage">
+    <canvas id="preview" width="608" height="760" aria-label="Cover preview"></canvas>
+    <p class="hint center">Click a panel to select it · drag inside to reposition the photo · scroll to zoom</p>
   </section>
-  <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
+
+  <aside class="panel right">
+    <section>
+      <h2>4 · Caption</h2>
+      <label>Title
+        <input id="title" type="text" maxlength="18" value="PALMSHADE">
+      </label>
+      <label>Subtitle
+        <input id="subtitle" type="text" maxlength="24" value="VICE HOURS">
+      </label>
+      <label>Badge letters
+        <input id="badge" type="text" maxlength="4" value="VI">
+      </label>
+    </section>
+
+    <section>
+      <h2>Selected panel</h2>
+      <p id="panel-label" class="panel-label">Panel 1</p>
+      <label>Zoom
+        <input id="zoom" type="range" min="1" max="3" step="0.01" value="1">
+      </label>
+      <button id="reset-panel" type="button">Reset position &amp; zoom</button>
+      <p class="hint">Tip: put your sharpest photo in the biggest panel, and keep faces away from the white keylines.</p>
+    </section>
+  </aside>
 </main>
+
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>

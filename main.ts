@@ -16,6 +16,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-app.ts';
 
+const APP_TITLE = 'Palmshade Cover Studio';
+console.log(`Building ${APP_TITLE}…`);
+
 const here = fileURLToPath(new URL('.', import.meta.url));
 const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 
