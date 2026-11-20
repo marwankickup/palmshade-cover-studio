@@ -19,17 +19,24 @@ under the SIL Open Font License (see `app/fonts/OFL.txt`).
   the two bundled samples (`app/samples/`). Every panel of the collage takes its own
   photo: click a panel to select it, click a photo to place it, drag inside the panel
   to reposition, scroll or use the slider to zoom. Photos always cover their panel.
-- **Four poster layouts** — Hero Stack (5 panels), Diagonal Bands (3), Five-Panel
-  Collage (5) and Duo Split (2) — defined as polygons, so they re-flow to any size.
-- **Five colour grades** applied per pixel on canvas: Sunset, Neon, Duotone
-  (purple→gold), Noir, or none.
-- **Caption block** — an angled title in the vendored Anton font with a magenta drop
-  shadow and black keyline, a letterspaced gold subtitle, and a hand-drawn hexagon
-  badge with your own roman-style letters.
+- **Seven poster layouts** — Hero Stack (5 panels), Diagonal Bands (3), Five-Panel
+  Collage (5), Duo Split (2), Poster Grid (4), Center Spotlight (a hero panel framed
+  by four) and Chevron Rows (4 zigzag bands) — defined as polygons, so they re-flow
+  to any size.
+- **Seven colour grades** applied per pixel on canvas: Sunset, Neon, Duotone
+  (purple→gold), Noir, Gold Hour (amber wash), Vice Pink (magenta cast), or none.
+- **Caption block** — an angled title in the vendored Anton font with a coloured
+  drop shadow and an optional black keyline, a letterspaced gold subtitle, and a
+  hand-drawn hexagon badge with your own roman-style letters, sealed into the
+  bottom-right corner where it never covers a face.
+- **Four title colour styles** (Classic White, Vice Gold, Neon Mint, Sunset Ember)
+  picked from swatches, with a toggle for the black keyline outline.
 - **Export** a finished PNG at 1080 × 1080, 1080 × 1350 or 1920 × 1080; the
   composition is re-rendered offscreen at full size.
-- **Two one-click presets** (Sunset Boulevard, Neon Pier) so a first-time visitor
-  sees a finished cover immediately — the app opens on one.
+- **Four one-click presets** (Sunset Boulevard, Neon Pier, Golden Mile, Vice Pink)
+  so a first-time visitor sees a finished cover immediately — the app opens on one —
+  plus a **Shuffle button** that deals a random layout, grade and title style with
+  your photos for instant inspiration.
 
 ## Run it
 

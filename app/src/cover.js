@@ -45,6 +45,34 @@ export const LAYOUTS = {
       [[0, 0.66], [1, 0.42], [1, 1], [0, 1]],
     ],
   },
+  grid: {
+    label: 'Poster Grid',
+    panels: [
+      [[0, 0], [0.52, 0], [0.48, 0.52], [0, 0.55]],
+      [[0.52, 0], [1, 0], [1, 0.48], [0.48, 0.52]],
+      [[0, 0.55], [0.48, 0.52], [0.46, 1], [0, 1]],
+      [[0.48, 0.52], [1, 0.48], [1, 1], [0.46, 1]],
+    ],
+  },
+  spotlight: {
+    label: 'Center Spotlight',
+    panels: [
+      [[0.30, 0.14], [0.72, 0.10], [0.78, 0.88], [0.26, 0.92]],
+      [[0, 0], [0.30, 0.14], [0.26, 0.92], [0, 1]],
+      [[0, 0], [1, 0], [0.72, 0.10], [0.30, 0.14]],
+      [[0.72, 0.10], [1, 0], [1, 1], [0.78, 0.88]],
+      [[0, 1], [0.26, 0.92], [0.78, 0.88], [1, 1]],
+    ],
+  },
+  chevron: {
+    label: 'Chevron Rows',
+    panels: [
+      [[0, 0], [1, 0], [1, 0.26], [0.5, 0.36], [0, 0.26]],
+      [[0, 0.26], [0.5, 0.36], [1, 0.26], [1, 0.52], [0.5, 0.62], [0, 0.52]],
+      [[0, 0.52], [0.5, 0.62], [1, 0.52], [1, 0.78], [0.5, 0.86], [0, 0.78]],
+      [[0, 0.78], [0.5, 0.86], [1, 0.78], [1, 1], [0, 1]],
+    ],
+  },
 };
 
 export function panelCount(layoutKey) {
@@ -143,6 +171,35 @@ export const GRADES = {
       return [v, v, v];
     },
   },
+  goldenhour: {
+    label: 'Gold Hour',
+    fn(r, g, b) {
+      // Amber wash: reds and greens lifted, blues pulled down, warm glow
+      // added everywhere so even shade reads as late-afternoon sun.
+      const l = lum(r, g, b);
+      const sat = 1.16;
+      return [
+        clamp((l + (r - l) * sat) * 1.13 + 15),
+        clamp((l + (g - l) * sat) * 1.03 + 6),
+        clamp((l + (b - l) * sat) * 0.76 - 8),
+      ];
+    },
+  },
+  vicepink: {
+    label: 'Vice Pink',
+    fn(r, g, b) {
+      // Hot pink cast: magenta pushed into the shadows, highlights stay
+      // warm, greens ducked so skin and signage go neon-rose.
+      const l = lum(r, g, b);
+      const t = l / 255;
+      const sat = 1.26;
+      return [
+        clamp((l + (r - l) * sat) * 1.07 + (1 - t) * 20),
+        clamp((l + (g - l) * sat) * 0.90),
+        clamp((l + (b - l) * sat) * 1.12 + (1 - t) * 34),
+      ];
+    },
+  },
 };
 
 function applyGrade(canvas, gradeKey) {
@@ -217,12 +274,14 @@ function tracePath(ctx, poly, w, h) {
 
 function drawBadge(ctx, w, h, text) {
   // Original shield badge: a gold-ringed hexagon with roman-style letters.
-  const size = Math.min(w, h) * 0.17;
-  const cx = w - size * 0.72;
-  const cy = size * 0.72;
+  // It seals the bottom-right corner, clear of the faces that fill the top
+  // panels of most layouts (in v1 it sat top-right, over the subject).
+  const size = Math.min(w, h) * 0.16;
+  const cx = w - size * 0.74;
+  const cy = h - size * 0.74;
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.rotate(-0.10);
+  ctx.rotate(0.08);
   ctx.beginPath();
   for (let i = 0; i < 6; i++) {
     const a = (Math.PI / 3) * i - Math.PI / 2;
@@ -257,6 +316,17 @@ function drawBadge(ctx, w, h, text) {
   ctx.restore();
 }
 
+// ------------------------------------------------------------ title style
+// The caption face is a vertical gradient with a coloured drop shadow; the
+// heavy black keyline around it can be toggled off for a cleaner look.
+
+export const TITLE_COLORS = {
+  classic: { label: 'Classic White', stops: ['#ffffff', '#fff4e0', '#ffc9de'], shadow: '#ff2e88' },
+  gold: { label: 'Vice Gold', stops: ['#fff8cf', '#ffd968', '#ff9d2e'], shadow: '#8f1d6e' },
+  mint: { label: 'Neon Mint', stops: ['#eafffb', '#8affd1', '#17c99a'], shadow: '#173a8f' },
+  ember: { label: 'Sunset Ember', stops: ['#ffedd6', '#ffb347', '#ff5e62'], shadow: '#3d0a4e' },
+};
+
 function drawTitleBlock(ctx, w, h, state) {
   const title = (state.title || '').trim();
   const subtitle = (state.subtitle || '').trim();
@@ -287,17 +357,21 @@ function drawTitleBlock(ctx, w, h, state) {
       fontSize = fontSize * (maxWidth / measured);
       ctx.font = `${fontSize}px Anton, sans-serif`;
     }
-    // Magenta drop shadow, heavy black keyline, warm white face.
-    ctx.fillStyle = '#ff2e88';
+    // Coloured drop shadow, optional heavy black keyline, gradient face —
+    // the colours come from the title style the editor picked.
+    const style = TITLE_COLORS[state.titleColor] || TITLE_COLORS.classic;
+    ctx.fillStyle = style.shadow;
     ctx.fillText(title, base * 0.012, base * 0.014);
-    ctx.lineWidth = fontSize * 0.16;
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#0d0518';
-    ctx.strokeText(title, 0, 0);
+    if (state.titleOutline !== false) {
+      ctx.lineWidth = fontSize * 0.16;
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#0d0518';
+      ctx.strokeText(title, 0, 0);
+    }
     const grad = ctx.createLinearGradient(0, -fontSize, 0, 0);
-    grad.addColorStop(0, '#ffffff');
-    grad.addColorStop(0.72, '#fff4e0');
-    grad.addColorStop(1, '#ffc9de');
+    grad.addColorStop(0, style.stops[0]);
+    grad.addColorStop(0.72, style.stops[1]);
+    grad.addColorStop(1, style.stops[2]);
     ctx.fillStyle = grad;
     ctx.fillText(title, 0, 0);
   }

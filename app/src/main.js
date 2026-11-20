@@ -1,7 +1,7 @@
 // Palmshade Cover Studio — editor wiring: photo library, panel selection,
 // drag/zoom placement, layout & grade pickers, caption fields, PNG export,
 // one-click presets, and the fixed ?shot= scenes used for screenshots.
-import { LAYOUTS, GRADES, EXPORT_SIZES, panelCount, hitPanel, renderCover } from './cover.js';
+import { LAYOUTS, GRADES, TITLE_COLORS, EXPORT_SIZES, panelCount, hitPanel, renderCover } from './cover.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('preview');
@@ -15,6 +15,8 @@ const state = {
   title: 'PALMSHADE',
   subtitle: 'VICE HOURS',
   badge: 'VI',
+  titleColor: 'classic',
+  titleOutline: true,
   size: '1080x1350',
   photos: [],      // loaded HTMLImageElement list (the library)
   photoNames: [],  // parallel display names
@@ -238,6 +240,37 @@ function refreshPickers() {
     (key) => { state.grade = key; refreshPickers(); redraw(); });
 }
 
+// --------------------------------------------------------- title styling
+function buildTitleColorPicker() {
+  const wrap = $('title-colors');
+  wrap.innerHTML = '';
+  for (const [key, style] of Object.entries(TITLE_COLORS)) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'swatch' + (key === state.titleColor ? ' active' : '');
+    b.title = style.label;
+    b.dataset.key = key;
+    b.style.background = `linear-gradient(160deg, ${style.stops[0]}, ${style.stops[1]} 55%, ${style.stops[2]})`;
+    b.addEventListener('click', () => {
+      state.titleColor = key;
+      buildTitleColorPicker();
+      redraw();
+      setStatus(`Title style: ${style.label}.`);
+    });
+    wrap.appendChild(b);
+  }
+}
+
+function syncTitleControls() {
+  buildTitleColorPicker();
+  $('title-outline').checked = state.titleOutline !== false;
+}
+
+$('title-outline').addEventListener('change', (e) => {
+  state.titleOutline = e.target.checked;
+  redraw();
+});
+
 $('title').addEventListener('input', (e) => { state.title = e.target.value.toUpperCase(); redraw(); });
 $('subtitle').addEventListener('input', (e) => { state.subtitle = e.target.value.toUpperCase(); redraw(); });
 $('badge').addEventListener('input', (e) => { state.badge = e.target.value.toUpperCase().slice(0, 4); redraw(); });
@@ -247,11 +280,23 @@ $('size').addEventListener('change', (e) => { state.size = e.target.value; redra
 const PRESETS = {
   sunset: {
     layout: 'hero', grade: 'sunset', title: 'PALMSHADE', subtitle: 'VICE HOURS', badge: 'VI',
+    titleColor: 'classic',
     photos: ['boulevard', 'pier', 'boulevard', 'pier', 'boulevard'],
   },
   neon: {
     layout: 'diagonal', grade: 'neon', title: 'NEON TIDE', subtitle: 'PALMSHADE CITY', badge: 'VI',
+    titleColor: 'mint',
     photos: ['pier', 'boulevard', 'pier'],
+  },
+  gold: {
+    layout: 'spotlight', grade: 'goldenhour', title: 'GOLDEN MILE', subtitle: 'PALMSHADE CITY', badge: 'VI',
+    titleColor: 'gold',
+    photos: ['boulevard', 'pier', 'boulevard', 'pier', 'boulevard'],
+  },
+  pink: {
+    layout: 'chevron', grade: 'vicepink', title: 'VICE PINK', subtitle: 'AFTER DARK', badge: 'VI',
+    titleColor: 'ember',
+    photos: ['pier', 'boulevard', 'pier', 'boulevard'],
   },
 };
 
@@ -268,9 +313,12 @@ async function applyPreset(name) {
   state.title = p.title;
   state.subtitle = p.subtitle;
   state.badge = p.badge;
+  state.titleColor = p.titleColor || 'classic';
+  state.titleOutline = true;
   $('title').value = p.title;
   $('subtitle').value = p.subtitle;
   $('badge').value = p.badge;
+  syncTitleControls();
   state.panels = p.photos.map((n) => freshPanel(Math.max(0, byName(n))));
   state.selected = 0;
   fitPanels();
@@ -284,6 +332,33 @@ async function applyPreset(name) {
 
 $('preset-sunset').addEventListener('click', () => applyPreset('sunset'));
 $('preset-neon').addEventListener('click', () => applyPreset('neon'));
+$('preset-gold').addEventListener('click', () => applyPreset('gold'));
+$('preset-pink').addEventListener('click', () => applyPreset('pink'));
+
+// -------------------------------------------------------------- shuffle
+// One click, a fresh cover: a random layout and grade, a random title
+// style, and the library photos dealt back into the panels with playful
+// zooms and offsets. The caption text stays the user's own.
+function shuffleCover() {
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  state.layout = pick(Object.keys(LAYOUTS));
+  state.grade = pick(Object.keys(GRADES).filter((k) => k !== 'none'));
+  state.titleColor = pick(Object.keys(TITLE_COLORS));
+  fitPanels();
+  state.panels = state.panels.map(() => ({
+    photo: state.photos.length ? Math.floor(Math.random() * state.photos.length) : -1,
+    zoom: 1 + Math.random() * 0.35,
+    ox: (Math.random() - 0.5) * 0.16,
+    oy: (Math.random() - 0.5) * 0.16,
+  }));
+  state.selected = 0;
+  syncPanelControls();
+  syncTitleControls();
+  refreshPickers();
+  redraw();
+  setStatus('Shuffled — a new mix. Shuffle again, or drag the panels to taste.');
+}
+$('shuffle').addEventListener('click', shuffleCover);
 
 // --------------------------------------------------------------- export
 function exportPNG() {
@@ -304,7 +379,7 @@ function exportPNG() {
 $('export').addEventListener('click', exportPNG);
 
 // Exposed for screenshot scenes and automated checks.
-window.__studio = { state, applyPreset, exportPNG, redraw };
+window.__studio = { state, applyPreset, exportPNG, redraw, shuffleCover };
 
 // ---------------------------------------------------------------- shots
 // ?shot=editor&layout=collage&grade=neon  → a staged editor scene
@@ -321,8 +396,15 @@ async function runShotScene() {
     refreshPickers();
   }
   if (q.get('grade')) state.grade = q.get('grade');
+  if (q.get('color')) state.titleColor = q.get('color');
+  if (q.get('size') && EXPORT_SIZES[q.get('size')]) {
+    state.size = q.get('size');
+    $('size').value = state.size;
+  }
   if (q.get('title')) { state.title = q.get('title'); $('title').value = state.title; }
   if (q.get('subtitle')) { state.subtitle = q.get('subtitle'); $('subtitle').value = state.subtitle; }
+  syncTitleControls();
+  syncPanelControls();
   refreshPickers();
   redraw();
   requestAnimationFrame(() => requestAnimationFrame(() => { window.__shotReady = true; }));
@@ -333,6 +415,7 @@ async function runShotScene() {
 async function boot() {
   fitPanels();
   refreshPickers();
+  syncTitleControls();
   syncPanelControls();
   try {
     await document.fonts.load('100px Anton');
